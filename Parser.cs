@@ -173,21 +173,21 @@ namespace Compiler
 
             return new(ident, expr);
         }
-        NodeStmtDeclaration ParseStmtDeclaration(VariableType type)
+        NodeStmtDeclaration ParseStmtDeclaration(VariableType? type)
         {
             Consume();
             Token ident = Consume();
             TryConsume(TokenType.equal);
 
             NodeExpr expr = ParseExpr();
-            if (expr.type != type)
+            if (type != null && expr.type != type)
             {
                 Compiler.Error($"Invalid type {expr.type}. Expected {type}.", ident.line);
             }
 
             TryConsume(TokenType.semicolon);
 
-            variables.Push(new(type, ident.value!));
+            variables.Push(new(expr.type, ident.value!));
 
             return new(ident, expr);
         }
@@ -225,6 +225,28 @@ namespace Compiler
 
             return new(expr, scope);
         }
+        NodeStmtFor ParseStmtFor()
+        {
+            Token forToken = Consume();
+            TryConsume(TokenType.open_paren);
+
+            NodeStmtDeclaration decl = ParseStmtDeclaration(null);
+            TryConsume(TokenType.semicolon);
+
+            NodeExpr expr = ParseExpr();
+            TryConsume(TokenType.semicolon);
+            if (expr.type != VariableType.Boolean)
+            {
+                Compiler.Error($"Invalid type {expr.type}. Expected Boolean.", forToken.line);
+            }
+
+            NodeStmtAssignment assign = ParseStmtAssignment();
+            TryConsume(TokenType.close_paren);
+
+            NodeScope scope = ParseScope();
+
+            return new(decl, expr, assign, scope);
+        }
         NodeStmt? ParseStmt()
         {
             if (!TokensLeft())
@@ -239,6 +261,7 @@ namespace Compiler
                 TokenType.ident => new(ParseStmtAssignment()),
                 TokenType._if => new(ParseStmtIf()),
                 TokenType._while => new(ParseStmtWhile()),
+                TokenType._for => new(ParseStmtFor()),
                 TokenType.open_curly => new(ParseScope()),
                 _ => null,
             };

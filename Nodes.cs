@@ -368,6 +368,20 @@ namespace Compiler
             this.scope = scope;
         }
     }
+    public struct NodeStmtFor : INodeStmt
+    {
+        public NodeStmtDeclaration decl;
+        public NodeExpr expr;
+        public NodeStmtAssignment assign;
+        public NodeScope scope;
+        public NodeStmtFor(NodeStmtDeclaration decl, NodeExpr expr, NodeStmtAssignment assign, NodeScope scope)
+        {
+            this.decl = decl;
+            this.expr = expr;
+            this.assign = assign;
+            this.scope = scope;
+        }
+    }
     public struct NodeStmt
     {
         public INodeStmt var;

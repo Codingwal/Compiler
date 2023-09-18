@@ -6,6 +6,7 @@ namespace Compiler
         _exit,
         _if,
         _while,
+        _for,
 
         // Types
         _int,
@@ -65,6 +66,7 @@ namespace Compiler
             {"exit", TokenType._exit},
             {"if", TokenType._if},
             {"while", TokenType._while},
+            {"for", TokenType._while},
             {"int", TokenType._int},
             {"bool", TokenType._bool},
         };
