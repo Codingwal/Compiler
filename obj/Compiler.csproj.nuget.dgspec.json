@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\flori\\OneDrive\\Dokumente\\Coding\\C#\\Compiler\\Compiler.csproj": {}
+    "c:\\Users\\flori\\OneDrive\\Dokumente\\Coding\\C#\\Compiler\\Compiler.csproj": {}
   },
   "projects": {
-    "C:\\Users\\flori\\OneDrive\\Dokumente\\Coding\\C#\\Compiler\\Compiler.csproj": {
+    "c:\\Users\\flori\\OneDrive\\Dokumente\\Coding\\C#\\Compiler\\Compiler.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\flori\\OneDrive\\Dokumente\\Coding\\C#\\Compiler\\Compiler.csproj",
+        "projectUniqueName": "c:\\Users\\flori\\OneDrive\\Dokumente\\Coding\\C#\\Compiler\\Compiler.csproj",
         "projectName": "Compiler",
-        "projectPath": "C:\\Users\\flori\\OneDrive\\Dokumente\\Coding\\C#\\Compiler\\Compiler.csproj",
+        "projectPath": "c:\\Users\\flori\\OneDrive\\Dokumente\\Coding\\C#\\Compiler\\Compiler.csproj",
         "packagesPath": "C:\\Users\\flori\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\flori\\OneDrive\\Dokumente\\Coding\\C#\\Compiler\\obj\\",
+        "outputPath": "c:\\Users\\flori\\OneDrive\\Dokumente\\Coding\\C#\\Compiler\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
