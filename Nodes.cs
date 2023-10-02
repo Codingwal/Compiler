@@ -382,6 +382,38 @@ namespace Compiler
             this.scope = scope;
         }
     }
+    public struct NodeStmtFunctionDeclaration : INodeStmt
+    {
+        public string name;
+        public List<VariableToken> parameters;
+        public NodeScope scope;
+        public NodeStmtFunctionDeclaration(string name, List<VariableToken> parameters, NodeScope scope)
+        {
+            this.name = name;
+            this.parameters = parameters;
+            this.scope = scope;
+        }
+    }
+    public struct NodeStmtFunctionCall : INodeStmt, INodeTerm
+    {
+        public string name;
+        public VariableType Type { get; set; }
+        public List<NodeExpr> parameters;
+        public NodeStmtFunctionCall(string name, VariableType type, List<NodeExpr> parameters)
+        {
+            this.name = name;
+            Type = type;
+            this.parameters = parameters;
+        }
+    }
+    public struct NodeStmtReturn : INodeStmt
+    {
+        public NodeExpr expr;
+        public NodeStmtReturn(NodeExpr expr)
+        {
+            this.expr = expr;
+        }
+    }
     public struct NodeStmt
     {
         public INodeStmt var;

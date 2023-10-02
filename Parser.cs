@@ -3,7 +3,8 @@ namespace Compiler
     public enum VariableType
     {
         Integer,
-        Boolean
+        Boolean,
+        Void
     }
     public struct VariableToken
     {
@@ -13,6 +14,18 @@ namespace Compiler
         {
             this.name = name;
             this.type = type;
+        }
+    }
+    public struct FunctionToken
+    {
+        public string name;
+        public VariableType type;
+        public List<VariableType> parameters;
+        public FunctionToken(VariableType type, string name, List<VariableType> parameters)
+        {
+            this.name = name;
+            this.type = type;
+            this.parameters = parameters;
         }
     }
 
@@ -26,10 +39,12 @@ namespace Compiler
         private List<Token> tokens;
         private int index;
         private Stack<VariableToken> variables;
+        private List<FunctionToken> functions;
         public Parser(List<Token> tokens)
         {
             this.tokens = tokens;
             variables = new();
+            functions = new();
         }
         NodeTerm ParseTerm()
         {
@@ -132,7 +147,7 @@ namespace Compiler
             Consume();
             while (true)
             {
-                NodeStmt? stmt = ParseStmt();
+                NodeStmt? stmt = ParseStmt(true);
                 if (stmt == null)
                 {
                     break;
@@ -157,12 +172,12 @@ namespace Compiler
 
             return new(expr);
         }
-        NodeStmtAssignment ParseStmtAssignment()
+        NodeStmtAssignment ParseStmtAssignment(bool needSemicolon = true)
         {
             Token ident = Consume();
             TryConsume(TokenType.equal);
             NodeExpr expr = ParseExpr();
-            TryConsume(TokenType.semicolon);
+            if (needSemicolon) TryConsume(TokenType.semicolon);
 
             VariableToken variable = GetVariable(ident.value!, ident.line);
 
@@ -231,7 +246,6 @@ namespace Compiler
             TryConsume(TokenType.open_paren);
 
             NodeStmtDeclaration decl = ParseStmtDeclaration(null);
-            TryConsume(TokenType.semicolon);
 
             NodeExpr expr = ParseExpr();
             TryConsume(TokenType.semicolon);
@@ -240,14 +254,139 @@ namespace Compiler
                 Compiler.Error($"Invalid type {expr.type}. Expected Boolean.", forToken.line);
             }
 
-            NodeStmtAssignment assign = ParseStmtAssignment();
+            NodeStmtAssignment assign = ParseStmtAssignment(false);
             TryConsume(TokenType.close_paren);
 
             NodeScope scope = ParseScope();
 
             return new(decl, expr, assign, scope);
         }
-        NodeStmt? ParseStmt()
+        NodeStmtFunctionDeclaration ParseStmtFunctionDeclaration()
+        {
+            List<VariableToken> parameters = new();
+            List<VariableType> parameterTypes = new();
+
+            Token functionKeyword = Consume();
+
+            // Get return type
+            TokenType type = Consume().type;
+            if (!IsTypeToken(type))
+            {
+                Compiler.Error($"Token {Peek().type} is not valid in a function declaration", functionKeyword.line);
+            }
+
+            // Get function name
+            Token ident = Consume();
+            if (ident.type != TokenType.ident)
+            {
+                Compiler.Error($"Expected function name", ident.line);
+            }
+
+            TryConsume(TokenType.open_paren);
+
+            // Get parameters
+            while (true)
+            {
+                if (Peek().type == TokenType.close_paren)
+                {
+                    Consume();
+                    break;
+                }
+
+                Token typeToken = Consume();
+                if (!IsTypeToken(typeToken.type))
+                {
+                    Compiler.Error($"Invalid token {typeToken.type}, expected type token", typeToken.line);
+                }
+
+                Token identToken = Consume();
+                if (identToken.type != TokenType.ident)
+                {
+                    Compiler.Error($"Invalid token {identToken.type}, expected identifier", identToken.line);
+                }
+
+                parameters.Add(new(ToVariableType(typeToken.type), identToken.value!));
+                parameterTypes.Add(ToVariableType(typeToken.type));
+                variables.Push(new(ToVariableType(typeToken.type), identToken.value!));
+
+                if (Peek().type == TokenType.close_paren)
+                {
+                    Consume();
+                    break;
+                }
+                TryConsume(TokenType.comma);
+            }
+
+            NodeScope scope = ParseScope();
+
+            functions.Add(new(ToVariableType(type), ident.value!, parameterTypes));
+            return new(ident.value!, parameters, scope);
+        }
+        NodeStmtFunctionCall ParseStmtFunctionCall()
+        {
+            List<NodeExpr> parameters = new();
+
+            Token ident = Consume();
+
+            if (ident.type != TokenType.ident)
+            {
+                Compiler.Error($"Invalid token {ident.type}, expected identifier", ident.line);
+            }
+
+            TryConsume(TokenType.open_paren);
+
+            FunctionToken functionToken = GetFunction(ident.value!, ident.line);
+            for (int i = 0; i < functionToken.parameters.Count; i++)
+            {
+                VariableType parameter = functionToken.parameters[i];
+
+                NodeExpr expr = ParseExpr();
+                if (expr.type != parameter)
+                {
+                    Compiler.Error($"Invalid type {expr.type}, expected {parameter}");
+                }
+                parameters.Add(expr);
+                if (Peek().type == TokenType.close_paren)
+                {
+                    if (i < functionToken.parameters.Count - 1)
+                    {
+                        Compiler.Error($"Missing parameters", Peek().line);
+                    }
+                    break;
+                }
+                TryConsume(TokenType.comma);
+            }
+            TryConsume(TokenType.close_paren);
+            TryConsume(TokenType.semicolon);
+
+            return new(ident.value!, functionToken.type, parameters);
+        }
+        NodeStmtReturn ParseReturn(bool isInFunction)
+        {
+            if (!isInFunction)
+            {
+                Compiler.Error("Invalid statement 'return' outside of function definition.");
+            }
+            Consume();
+            NodeExpr expr = ParseExpr();
+            TryConsume(TokenType.semicolon);
+            return new(expr);
+        }
+        INodeStmt ParseIdent()
+        {
+            switch (Peek(1).type)
+            {
+                case TokenType.open_paren:
+                    return ParseStmtFunctionCall();
+                case TokenType.equal:
+                    return ParseStmtAssignment();
+                default:
+                    Compiler.Error("Invalid statement. Expected function or assignment.", Peek().line);
+                    return default!; // This is never reached
+
+            }
+        }
+        NodeStmt? ParseStmt(bool isInFunction)
         {
             if (!TokensLeft())
             {
@@ -255,14 +394,29 @@ namespace Compiler
             }
             return Peek().type switch
             {
+                /* 
+                    struct definition
+                    function definition
+                    function call
+                    variable declaration
+                    variable definition
+                    variable assignment
+                    scope
+                    if statement
+                    while loop
+                    for loop
+                    return statement
+                */
                 TokenType._exit => new(ParseStmtExit()),
                 TokenType._int => new(ParseStmtDeclaration(VariableType.Integer)),
                 TokenType._bool => new(ParseStmtDeclaration(VariableType.Boolean)),
-                TokenType.ident => new(ParseStmtAssignment()),
+                TokenType.ident => new(ParseIdent()),
                 TokenType._if => new(ParseStmtIf()),
                 TokenType._while => new(ParseStmtWhile()),
                 TokenType._for => new(ParseStmtFor()),
+                TokenType._function => new(ParseStmtFunctionDeclaration()),
                 TokenType.open_curly => new(ParseScope()),
+                TokenType._return => new(ParseReturn(isInFunction)),
                 _ => null,
             };
 
@@ -274,7 +428,7 @@ namespace Compiler
 
             while (TokensLeft())
             {
-                NodeStmt? stmt = ParseStmt();
+                NodeStmt? stmt = ParseStmt(false);
                 if (stmt == null)
                 {
                     Compiler.Error("Invalid statement");
@@ -330,18 +484,6 @@ namespace Compiler
             index++;
             return c;
         }
-
-        bool DoesVariableExist(string variableName)
-        {
-            foreach (VariableToken variable in variables)
-            {
-                if (variable.name == variableName)
-                {
-                    return true;
-                }
-            }
-            return false;
-        }
         VariableToken GetVariable(string variableName, int line)
         {
             foreach (VariableToken variable in variables)
@@ -353,6 +495,47 @@ namespace Compiler
             }
             Compiler.Error("Variable does not exist", line);
             return default;
+        }
+        FunctionToken GetFunction(string functionName, int line)
+        {
+            foreach (FunctionToken function in functions)
+            {
+                if (function.name == functionName)
+                {
+                    return function;
+                }
+            }
+            Compiler.Error("Function does not exist", line);
+            return default;
+        }
+
+        static bool IsTypeToken(TokenType type)
+        {
+            return type switch
+            {
+                TokenType._int or TokenType._bool => true,
+                _ => false
+            };
+        }
+        static VariableType ToVariableType(TokenType type)
+        {
+            return type switch
+            {
+                TokenType._int => VariableType.Integer,
+                TokenType._bool => VariableType.Boolean,
+                TokenType._void => VariableType.Void,
+                _ => default
+            };
+        }
+        static TokenType ToTokenType(VariableType type)
+        {
+            return type switch
+            {
+                VariableType.Integer => TokenType._int,
+                VariableType.Boolean => TokenType._bool,
+                VariableType.Void => TokenType._void,
+                _ => default
+            };
         }
     }
 }

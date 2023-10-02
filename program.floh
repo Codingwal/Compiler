@@ -1,0 +1,3 @@
+string input = Console.Input();
+
+Console.Write("Your message is \"" + input + "\" and thats cool!");

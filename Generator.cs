@@ -1,9 +1,8 @@
 using System.Diagnostics;
-using System.Reflection.Metadata;
 
 namespace Compiler
 {
-    struct Variable
+    public class Variable
     {
         public string name;
         public VariableType type;
@@ -19,11 +18,11 @@ namespace Compiler
     {
         NodeProg prog;
         string output;
-        int stackSize = 0;
-        Stack<Variable> variables;
+        List<Variable> variables;
         Stack<int> scopes;
         int ifStmtCount = 0;
         int whileLoopCount = 0;
+        int forLoopCount = 0;
         private Dictionary<VariableType, int> variableSizes = new()
         {
             {VariableType.Integer, 8},
@@ -74,7 +73,7 @@ namespace Compiler
                 }
                 Variable variable = GetVariable(variableName);
                 int variableSize = variableSizes[variable.type];
-                int stackPos = stackSize - variable.stackPosition - variableSize;
+                int stackPos = variable.stackPosition - variableSize;
 
                 output += $"\n    ; Push variable of type {variable.type} to the top of the stack\n";
                 Push($"{GetWord(variableSize)} [rsp + {stackPos}]", variableSize);
@@ -334,10 +333,10 @@ namespace Compiler
                 GenerateBinExpr((NodeExprBin)expr.var);
             }
         }
-        void GenerateScope(NodeScope scope)
+        void GenerateScope(NodeScope scope, int additionalVarsToDelete = 0)
         {
             // Begin scope
-            scopes.Push(variables.Count);
+            scopes.Push(variables.Count - additionalVarsToDelete);
 
             // Generate scope contents
             foreach (NodeStmt nodeStmt in scope.stmts)
@@ -353,96 +352,210 @@ namespace Compiler
 
             for (int i = 0; i < popCount; i++)
             {
-                Variable variable = variables.Pop();
-                stackSize -= variableSizes[variable.type];
+                Variable variable = PopVariable();
+                ChangeStackPointer(-variableSizes[variable.type]);
             }
         }
+
+        void GenerateStmtExit(NodeStmtExit stmt)
+        {
+            GenerateExpr(stmt.expr);
+
+            output += "\n    ; Exit statement\n";
+            Pop("rcx", 8);
+            output += "    call ExitProcess\n"; // Get the expr value
+        }
+        void GenerateStmtDeclaration(NodeStmtDeclaration stmt)
+        {
+            CreateVariable(stmt.ident.value!, stmt.expr.type);
+            output += $"\n    ; Create variable {stmt.ident.value!}\n";
+            GenerateExpr(stmt.expr);
+        }
+        void GenerateStmtAssignment(NodeStmtAssignment stmt)
+        {
+            if (!DoesVariableExist(stmt.ident.value!))
+            {
+                Compiler.Error($"Undeclared variable: {stmt.ident.value!}");
+                return;
+            }
+            GenerateExpr(stmt.expr);
+            Variable variable = GetVariable(stmt.ident.value!);
+
+            int variableSize = variableSizes[variable.type];
+            int stackPos = variable.stackPosition - variableSize * 2;
+
+            string register = GetRegister('a', variableSize);
+            output += $"\n    ; Assign value to variable {variable.name}\n";
+            Pop(register, variableSize);
+            output += $"    mov {GetWord(variableSize)} [rsp + {stackPos}], {register}\n";
+        }
+        void GenerateStmtIf(NodeStmtIf stmt)
+        {
+            GenerateExpr(stmt.expr);
+
+            int ifStmtIndex = ifStmtCount;
+            ifStmtCount++;
+
+            output += "\n    ; If statement\n";
+            Pop("ax", 2);
+            output += $"    sub al, 0\n";
+            output += $"    jz if_end{ifStmtIndex}\n";
+
+            GenerateScope(stmt.scope);
+
+            output += $"if_end{ifStmtIndex}:\n";
+        }
+        void GenerateStmtWhile(NodeStmtWhile stmt)
+        {
+            int whileLoopIndex = whileLoopCount;
+            ifStmtCount++;
+
+            output += "\n    ; While loop\n";
+            output += $"while_start{whileLoopIndex}:\n";
+            GenerateExpr(stmt.expr);
+
+            output += "\n";
+            Pop("ax", 2);
+            output += $"    sub al, 0\n";
+            output += $"    jz while_end{whileLoopIndex}\n";
+
+            GenerateScope(stmt.scope);
+            output += $"    jmp while_start{whileLoopIndex}\n";
+            output += $"while_end{whileLoopIndex}:\n";
+        }
+        void GenerateStmtFor(NodeStmtFor stmt)
+        {
+            int forLoopIndex = forLoopCount;
+            forLoopCount++;
+
+            output += "\n    ; For loop\n";
+            GenerateStmtDeclaration(stmt.decl);
+            output += $"\n    jmp for_scope_start{forLoopIndex}\n";
+            output += $"for_start{forLoopIndex}:\n";
+            GenerateStmtAssignment(stmt.assign);
+            GenerateExpr(stmt.expr);
+            output += "\n";
+            Pop("ax", 2);
+            output += $"    sub al, 0\n";
+            output += $"    jz for_end{forLoopIndex}\n";
+            output += $"for_scope_start{forLoopIndex}:\n";
+
+            GenerateScope(stmt.scope);
+            output += $"    jmp for_start{forLoopIndex}\n";
+            output += $"for_end{forLoopIndex}:\n";
+
+            // Delete variable i
+            output += "    add rsp, 8\n";
+            Variable variable = PopVariable();
+            ChangeStackPointer(-variableSizes[variable.type]);
+        }
+        void GenerateFunctionDeclaration(NodeStmtFunctionDeclaration stmt)
+        {
+            output += "\n    ; Function declaration\n";
+            output += $"    jmp main_end_{stmt.name}\n";
+            output += $"main_{stmt.name}:\n";
+
+            // Loop through parameters in reverse order (Last parameter is on top)
+            ChangeStackPointer(8);
+            int stackPos = 0;
+            for (int i = stmt.parameters.Count - 1; i >= 0; i--)
+            {
+                VariableToken parameter = stmt.parameters[i];
+                int parameterSize = variableSizes[parameter.type];
+                CreateVariable(parameter.name, parameter.type, stackPos + parameterSize);
+
+                stackPos += parameterSize; // + because stack grows downwards
+                ChangeStackPointer(parameterSize);
+            }
+
+            GenerateScope(stmt.scope);
+            output += "    ret\n";
+            ChangeStackPointer(-8);
+            ChangeStackPointer(-stackPos);
+            output += $"main_end_{stmt.name}:\n";
+        }
+        void GenerateFunctionCall(NodeStmtFunctionCall stmt)
+        {
+            output += "\n    ; Function call\n";
+            int parameterSize = 0;
+            foreach (NodeExpr parameter in stmt.parameters)
+            {
+                GenerateExpr(parameter);
+                parameterSize += variableSizes[parameter.type];
+            }
+            // output += "    add rsp, 8 ; Return value placeholder";
+            output += $"    call main_{stmt.name}\n";
+            output += $"    add rsp, {parameterSize}\n";
+            ChangeStackPointer(-parameterSize);
+        }
+        void GenerateReturn(NodeStmtReturn stmt)
+        {
+            output += "\n    ; Return\n";
+
+            // Store expression in a register
+            GenerateExpr(stmt.expr);
+            int returnValueSize = variableSizes[stmt.expr.type];
+            string register = GetRegister('a', returnValueSize);
+            Pop(register, returnValueSize);
+
+            // End scope
+            // int popCount = variables.Count - scopes.Pop();
+            // output += "\n    ; Pop scope variables from stack\n";
+            // output += $"    add rsp, {popCount * 8}\n";
+            // for (int i = 0; i < popCount; i++)
+            // {
+            //     Variable variable = PopVariable();
+            //     ChangeStackPointer(-variableSizes[variable.type]);
+            // }
+
+            // Store return value on stack and return
+            output += $"    mov {GetWord(returnValueSize)} [rsp + 8], {register}\n";
+            output += "    ret\n";
+        }
+
         void GenerateStmt(NodeStmt stmt)
         {
             Type stmtType = stmt.var.GetType();
 
             if (stmtType == typeof(NodeStmtExit))
             {
-                NodeStmtExit stmtExit = (NodeStmtExit)stmt.var;
-
-                GenerateExpr(stmtExit.expr);
-
-                output += "\n    ; Exit statement\n";
-                Pop("rcx", 8);
-                output += "    call ExitProcess\n"; // Get the expr value
+                GenerateStmtExit((NodeStmtExit)stmt.var);
             }
             else if (stmtType == typeof(NodeStmtDeclaration))
             {
-                NodeStmtDeclaration stmtDeclaration = (NodeStmtDeclaration)stmt.var;
-                if (DoesVariableExist(stmtDeclaration.ident.value!))
-                {
-                    Compiler.Error($"Identifier already used: {stmtDeclaration.ident.value!}");
-                    return;
-                }
-                variables.Push(new(stmtDeclaration.ident.value!, stmtDeclaration.expr.type, stackSize));
-                output += $"\n    ; Create variable {stmtDeclaration.ident.value!}\n";
-                GenerateExpr(stmtDeclaration.expr);
+                GenerateStmtDeclaration((NodeStmtDeclaration)stmt.var);
             }
             else if (stmtType == typeof(NodeStmtAssignment))
             {
-                NodeStmtAssignment stmtAssignment = (NodeStmtAssignment)stmt.var;
-                if (!DoesVariableExist(stmtAssignment.ident.value!))
-                {
-                    Compiler.Error($"Undeclared variable: {stmtAssignment.ident.value!}");
-                    return;
-                }
-                GenerateExpr(stmtAssignment.expr);
-                Variable variable = GetVariable(stmtAssignment.ident.value!);
-
-                int variableSize = variableSizes[variable.type];
-                int stackPos = stackSize - variable.stackPosition - variableSize * 2;
-
-                string register = GetRegister('a', variableSize);
-                output += $"\n    ; Assign value to variable {variable.name}\n";
-                Pop(register, variableSize);
-                output += $"    mov {GetWord(variableSize)} [rsp + {stackPos}], {register}\n";
+                GenerateStmtAssignment((NodeStmtAssignment)stmt.var);
             }
             else if (stmtType == typeof(NodeStmtIf))
             {
-                NodeStmtIf stmtIf = (NodeStmtIf)stmt.var;
-                GenerateExpr(stmtIf.expr);
-
-                int ifStmtIndex = ifStmtCount;
-                ifStmtCount++;
-
-                output += "\n    ; If statement\n";
-                Pop("ax", 2);
-                output += $"    sub al, 0\n";
-                output += $"    jz if_end{ifStmtIndex}\n";
-
-                GenerateScope(stmtIf.scope);
-
-                output += $"if_end{ifStmtIndex}:\n";
+                GenerateStmtIf((NodeStmtIf)stmt.var);
             }
             else if (stmtType == typeof(NodeStmtWhile))
             {
-                NodeStmtWhile stmtIf = (NodeStmtWhile)stmt.var;
-
-                int whileLoopIndex = whileLoopCount;
-                ifStmtCount++;
-
-                output += "\n    ; While loop\n";
-                output += $"while_start{whileLoopIndex}:\n";
-                GenerateExpr(stmtIf.expr);
-
-                output += "\n";
-                Pop("ax", 2);
-                output += $"    sub al, 0\n";
-                output += $"    jz while_end{whileLoopIndex}\n";
-
-                GenerateScope(stmtIf.scope);
-                output += $"    jmp while_start{whileLoopIndex}\n";
-                output += $"while_end{whileLoopIndex}:\n";
+                GenerateStmtWhile((NodeStmtWhile)stmt.var);
+            }
+            else if (stmtType == typeof(NodeStmtFor))
+            {
+                GenerateStmtFor((NodeStmtFor)stmt.var);
             }
             else if (stmtType == typeof(NodeScope))
             {
-                NodeScope scope = (NodeScope)stmt.var;
-                GenerateScope(scope);
+                GenerateScope((NodeScope)stmt.var);
+            }
+            else if (stmtType == typeof(NodeStmtFunctionDeclaration))
+            {
+                GenerateFunctionDeclaration((NodeStmtFunctionDeclaration)stmt.var);
+            }
+            else if (stmtType == typeof(NodeStmtFunctionCall))
+            {
+                GenerateFunctionCall((NodeStmtFunctionCall)stmt.var);
+            }
+            else if (stmtType == typeof(NodeStmtReturn))
+            {
+                GenerateReturn((NodeStmtReturn)stmt.var);
             }
         }
         public string Generate()
@@ -459,6 +572,15 @@ namespace Compiler
             output += "    xor rcx, rcx\n";
             output += "    call ExitProcess\n";
             return output;
+        }
+        void CreateVariable(string name, VariableType type, int stackPos = 0)
+        {
+            if (DoesVariableExist(name))
+            {
+                Compiler.Error($"Identifier already used: {name}");
+                return;
+            }
+            variables.Add(new(name, type, stackPos));
         }
         Variable GetVariable(string variableName)
         {
@@ -504,12 +626,26 @@ namespace Compiler
         void Push(string register, int size)
         {
             output += $"    push {register}\n";
-            stackSize += size;
+            ChangeStackPointer(size);
         }
         void Pop(string register, int size)
         {
             output += $"    pop {register}\n";
-            stackSize -= size;
+            ChangeStackPointer(-size);
+        }
+        Variable PopVariable()
+        {
+            Variable variable = variables[^1];
+            variables.Remove(variable);
+            return variable;
+        }
+        void ChangeStackPointer(int size)
+        {
+            for (int i = 0; i < variables.Count; i++)
+            {
+                Variable variable = variables.ElementAt(i);
+                variable.stackPosition += size;
+            }
         }
     }
 }

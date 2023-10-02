@@ -7,10 +7,14 @@ namespace Compiler
         _if,
         _while,
         _for,
+        _function,
+        _return,
+        _struct,
 
         // Types
         _int,
         _bool,
+        _void,
 
         // user defined names and literals
         int_lit,
@@ -24,6 +28,7 @@ namespace Compiler
         open_curly,
         close_curly,
         equal,
+        comma,
 
         // Arithmetic symbols
         plus,
@@ -66,9 +71,13 @@ namespace Compiler
             {"exit", TokenType._exit},
             {"if", TokenType._if},
             {"while", TokenType._while},
-            {"for", TokenType._while},
+            {"for", TokenType._for},
             {"int", TokenType._int},
             {"bool", TokenType._bool},
+            {"void", TokenType._void},
+            {"function", TokenType._function},
+            {"return", TokenType._return},
+            {"struct", TokenType._struct},
         };
         public static Dictionary<string, TokenType> symbols = new()
         {
@@ -78,6 +87,7 @@ namespace Compiler
             {"{", TokenType.open_curly},
             {"}", TokenType.close_curly},
             {"=", TokenType.equal},
+            {",", TokenType.comma},
 
             {"+", TokenType.plus},
             {"-", TokenType.minus},
@@ -228,7 +238,7 @@ namespace Compiler
         {
             return c switch
             {
-                ';' or '(' or ')' or '{' or '}'
+                ';' or '(' or ')' or '{' or '}' or ','
                 or '=' or '+' or '-' or '*' or '/'
                 or '!' or '<' or '>' or '|' or '&' or '^' => true,
                 _ => false,

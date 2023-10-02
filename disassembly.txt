@@ -1,0 +1,118 @@
+
+out.exe:     file format pei-x86-64
+
+
+Disassembly of section .text:
+
+0000000140001000 <___crt_xc_end__>:
+   140001000:	48 89 e5             	mov    %rsp,%rbp
+   140001003:	48 c7 c1 f6 ff ff ff 	mov    $0xfffffffffffffff6,%rcx
+   14000100a:	e8 f1 00 00 00       	call   140001100 <GetStdHandle>
+   14000100f:	48 89 05 ea 0f 00 00 	mov    %rax,0xfea(%rip)        # 140002000 <__RUNTIME_PSEUDO_RELOC_LIST_END__>
+   140001016:	48 c7 c1 f5 ff ff ff 	mov    $0xfffffffffffffff5,%rcx
+   14000101d:	e8 de 00 00 00       	call   140001100 <GetStdHandle>
+   140001022:	48 89 05 df 0f 00 00 	mov    %rax,0xfdf(%rip)        # 140002008 <output_handle>
+   140001029:	4c 8d 25 40 18 00 00 	lea    0x1840(%rip),%r12        # 140002870 <dynamic_memory+0x80>
+   140001030:	41 54                	push   %r12
+   140001032:	6a 00                	push   $0x0
+
+0000000140001034 <..@12.await_input_loop_start>:
+   140001034:	48 8b 0d c5 0f 00 00 	mov    0xfc5(%rip),%rcx        # 140002000 <__RUNTIME_PSEUDO_RELOC_LIST_END__>
+   14000103b:	49 8d 54 24 08       	lea    0x8(%r12),%rdx
+   140001040:	41 b8 40 00 00 00    	mov    $0x40,%r8d
+   140001046:	4d 8d 0c 24          	lea    (%r12),%r9
+   14000104a:	48 83 ec 30          	sub    $0x30,%rsp
+   14000104e:	e8 a5 00 00 00       	call   1400010f8 <ReadFile>
+   140001053:	48 83 c4 30          	add    $0x30,%rsp
+   140001057:	48 83 f8 00          	cmp    $0x0,%rax
+   14000105b:	74 d7                	je     140001034 <..@12.await_input_loop_start>
+   14000105d:	4c 8d 25 8c 17 00 00 	lea    0x178c(%rip),%r12        # 1400027f0 <dynamic_memory>
+   140001064:	41 54                	push   %r12
+   140001066:	6a 00                	push   $0x0
+
+0000000140001068 <..@14.await_input_loop_start>:
+   140001068:	48 8b 0d 91 0f 00 00 	mov    0xf91(%rip),%rcx        # 140002000 <__RUNTIME_PSEUDO_RELOC_LIST_END__>
+   14000106f:	49 8d 54 24 08       	lea    0x8(%r12),%rdx
+   140001074:	41 b8 40 00 00 00    	mov    $0x40,%r8d
+   14000107a:	4d 8d 0c 24          	lea    (%r12),%r9
+   14000107e:	48 83 ec 30          	sub    $0x30,%rsp
+   140001082:	e8 71 00 00 00       	call   1400010f8 <ReadFile>
+   140001087:	48 83 c4 30          	add    $0x30,%rsp
+   14000108b:	48 83 f8 00          	cmp    $0x0,%rax
+   14000108f:	74 d7                	je     140001068 <..@14.await_input_loop_start>
+   140001091:	41 5c                	pop    %r12
+   140001093:	41 5c                	pop    %r12
+   140001095:	48 8b 0d 6c 0f 00 00 	mov    0xf6c(%rip),%rcx        # 140002008 <output_handle>
+   14000109c:	49 8d 54 24 08       	lea    0x8(%r12),%rdx
+   1400010a1:	4d 8b 04 24          	mov    (%r12),%r8
+   1400010a5:	4c 8d 0d 44 18 00 00 	lea    0x1844(%rip),%r9        # 1400028f0 <trash>
+   1400010ac:	48 83 ec 30          	sub    $0x30,%rsp
+   1400010b0:	e8 3b 00 00 00       	call   1400010f0 <WriteFile>
+   1400010b5:	48 83 c4 30          	add    $0x30,%rsp
+   1400010b9:	41 5c                	pop    %r12
+   1400010bb:	41 5c                	pop    %r12
+   1400010bd:	48 8b 0d 44 0f 00 00 	mov    0xf44(%rip),%rcx        # 140002008 <output_handle>
+   1400010c4:	49 8d 54 24 08       	lea    0x8(%r12),%rdx
+   1400010c9:	4d 8b 04 24          	mov    (%r12),%r8
+   1400010cd:	4c 8d 0d 1c 18 00 00 	lea    0x181c(%rip),%r9        # 1400028f0 <trash>
+   1400010d4:	48 83 ec 30          	sub    $0x30,%rsp
+   1400010d8:	e8 13 00 00 00       	call   1400010f0 <WriteFile>
+   1400010dd:	48 83 c4 30          	add    $0x30,%rsp
+   1400010e1:	48 8b 0d 08 18 00 00 	mov    0x1808(%rip),%rcx        # 1400028f0 <trash>
+   1400010e8:	e8 23 00 00 00       	call   140001110 <ExitProcess>
+   1400010ed:	0f 1f 00             	nopl   (%rax)
+
+00000001400010f0 <WriteFile>:
+   1400010f0:	ff 25 82 1f 00 00    	jmp    *0x1f82(%rip)        # 140003078 <__imp_WriteFile>
+   1400010f6:	90                   	nop
+   1400010f7:	90                   	nop
+
+00000001400010f8 <ReadFile>:
+   1400010f8:	ff 25 72 1f 00 00    	jmp    *0x1f72(%rip)        # 140003070 <__imp_ReadFile>
+   1400010fe:	90                   	nop
+   1400010ff:	90                   	nop
+
+0000000140001100 <GetStdHandle>:
+   140001100:	ff 25 62 1f 00 00    	jmp    *0x1f62(%rip)        # 140003068 <__imp_GetStdHandle>
+   140001106:	90                   	nop
+   140001107:	90                   	nop
+
+0000000140001108 <GetLastError>:
+   140001108:	ff 25 52 1f 00 00    	jmp    *0x1f52(%rip)        # 140003060 <__imp_GetLastError>
+   14000110e:	90                   	nop
+   14000110f:	90                   	nop
+
+0000000140001110 <ExitProcess>:
+   140001110:	ff 25 42 1f 00 00    	jmp    *0x1f42(%rip)        # 140003058 <__IAT_start__>
+   140001116:	90                   	nop
+   140001117:	90                   	nop
+   140001118:	0f 1f 84 00 00 00 00 	nopl   0x0(%rax,%rax,1)
+   14000111f:	00 
+
+0000000140001120 <__CTOR_LIST__>:
+   140001120:	ff                   	(bad)
+   140001121:	ff                   	(bad)
+   140001122:	ff                   	(bad)
+   140001123:	ff                   	(bad)
+   140001124:	ff                   	(bad)
+   140001125:	ff                   	(bad)
+   140001126:	ff                   	(bad)
+   140001127:	ff 00                	incl   (%rax)
+   140001129:	00 00                	add    %al,(%rax)
+   14000112b:	00 00                	add    %al,(%rax)
+   14000112d:	00 00                	add    %al,(%rax)
+	...
+
+0000000140001130 <__DTOR_LIST__>:
+   140001130:	ff                   	(bad)
+   140001131:	ff                   	(bad)
+   140001132:	ff                   	(bad)
+   140001133:	ff                   	(bad)
+   140001134:	ff                   	(bad)
+   140001135:	ff                   	(bad)
+   140001136:	ff                   	(bad)
+   140001137:	ff 00                	incl   (%rax)
+   140001139:	00 00                	add    %al,(%rax)
+   14000113b:	00 00                	add    %al,(%rax)
+   14000113d:	00 00                	add    %al,(%rax)
+	...

@@ -1,0 +1,9 @@
+functions as terms
+
+function return value type checking
+
+negative values as terms
+
+Code cleanup (Function Parsing functions, ...)
+
+strings and print function
