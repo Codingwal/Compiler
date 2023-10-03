@@ -1,56 +1,43 @@
 namespace Compiler
 {
-    public interface INodeTerm
-    {
-        public VariableType Type { get; set; }
-    }
+    public interface INodeTerm { }
     public struct NodeTermIdent : INodeTerm
     {
-        public VariableType Type { get; set; }
-        public VariableToken ident;
-        public NodeTermIdent(VariableType type, VariableToken ident)
+        public string ident;
+        public NodeTermIdent(string ident)
         {
-            Type = type;
             this.ident = ident;
         }
     }
     public struct NodeTermIntLit : INodeTerm
     {
-        public VariableType Type { get; set; }
         public Token int_lit;
         public NodeTermIntLit(Token int_lit)
         {
-            Type = VariableType.Integer;
             this.int_lit = int_lit;
         }
     }
     public struct NodeTermBoolLit : INodeTerm
     {
-        public VariableType Type { get; set; }
         public Token bool_lit;
         public NodeTermBoolLit(Token bool_lit)
         {
-            Type = VariableType.Boolean;
             this.bool_lit = bool_lit;
         }
     }
     public struct NodeTermParen : INodeTerm
     {
-        public VariableType Type { get; set; }
         public NodeExpr expr;
-        public NodeTermParen(VariableType type, NodeExpr expr)
+        public NodeTermParen(NodeExpr expr)
         {
-            Type = type;
             this.expr = expr;
         }
     }
     public struct NodeTermInvert : INodeTerm
     {
-        public VariableType Type { get; set; }
         public NodeExpr expr;
         public NodeTermInvert(NodeExpr expr)
         {
-            Type = VariableType.Boolean;
             this.expr = expr;
         }
     }
@@ -65,228 +52,135 @@ namespace Compiler
     // --------------------------------------------------------------------- //
     public interface INodeExprBin
     {
-        public VariableType Type { get; set; }
         public NodeExpr Lhs { get; set; }
         public NodeExpr Rhs { get; set; }
     }
     public struct NodeBinExprAdd : INodeExprBin
     {
-        public VariableType Type { get; set; }
         public NodeExpr Lhs { get; set; }
         public NodeExpr Rhs { get; set; }
         public NodeBinExprAdd(NodeExpr lhs, NodeExpr rhs)
         {
-            if (lhs.type != rhs.type || lhs.type != VariableType.Integer)
-            {
-                Compiler.Error($"Operator '+' cannot be applied to operands of type '{lhs.type}' and '{rhs.type}'");
-            }
-
-            Type = lhs.type;
             Lhs = lhs;
             Rhs = rhs;
-
         }
     }
     public struct NodeBinExprSub : INodeExprBin
     {
-        public VariableType Type { get; set; }
         public NodeExpr Lhs { get; set; }
         public NodeExpr Rhs { get; set; }
         public NodeBinExprSub(NodeExpr lhs, NodeExpr rhs)
         {
-            if (lhs.type != rhs.type || lhs.type != VariableType.Integer)
-            {
-                Compiler.Error($"Operator '-' cannot be applied to operands of type '{lhs.type}' and '{rhs.type}'");
-            }
-
-            Type = lhs.type;
             Lhs = lhs;
             Rhs = rhs;
         }
     }
     public struct NodeBinExprMult : INodeExprBin
     {
-        public VariableType Type { get; set; }
         public NodeExpr Lhs { get; set; }
         public NodeExpr Rhs { get; set; }
         public NodeBinExprMult(NodeExpr lhs, NodeExpr rhs)
         {
-            if (lhs.type != rhs.type || lhs.type != VariableType.Integer)
-            {
-                Compiler.Error($"Operator '*' cannot be applied to operands of type '{lhs.type}' and '{rhs.type}'");
-            }
-
-            Type = lhs.type;
             Lhs = lhs;
             Rhs = rhs;
         }
     }
     public struct NodeBinExprDiv : INodeExprBin
     {
-        public VariableType Type { get; set; }
         public NodeExpr Lhs { get; set; }
         public NodeExpr Rhs { get; set; }
         public NodeBinExprDiv(NodeExpr lhs, NodeExpr rhs)
         {
-            if (lhs.type != rhs.type || lhs.type != VariableType.Integer)
-            {
-                Compiler.Error($"Operator '/' cannot be applied to operands of type '{lhs.type}' and '{rhs.type}'");
-            }
-
-            Type = lhs.type;
             Lhs = lhs;
             Rhs = rhs;
         }
     }
     public struct NodeBinExprIsEqual : INodeExprBin
     {
-        public VariableType Type { get; set; }
         public NodeExpr Lhs { get; set; }
         public NodeExpr Rhs { get; set; }
         public NodeBinExprIsEqual(NodeExpr lhs, NodeExpr rhs)
         {
-            if (lhs.type != rhs.type)
-            {
-                Compiler.Error($"Operator '==' cannot be applied to operands of type '{lhs.type}' and '{rhs.type}'");
-            }
-            Type = VariableType.Boolean;
-
             Lhs = lhs;
             Rhs = rhs;
         }
     }
     public struct NodeBinExprIsNotEqual : INodeExprBin
     {
-        public VariableType Type { get; set; }
         public NodeExpr Lhs { get; set; }
         public NodeExpr Rhs { get; set; }
         public NodeBinExprIsNotEqual(NodeExpr lhs, NodeExpr rhs)
         {
-            if (lhs.type != rhs.type)
-            {
-                Compiler.Error($"Operator '!=' cannot be applied to operands of type '{lhs.type}' and '{rhs.type}'");
-            }
-            Type = VariableType.Boolean;
-
             Lhs = lhs;
             Rhs = rhs;
         }
     }
     public struct NodeBinExprLessThan : INodeExprBin
     {
-        public VariableType Type { get; set; }
         public NodeExpr Lhs { get; set; }
         public NodeExpr Rhs { get; set; }
         public NodeBinExprLessThan(NodeExpr lhs, NodeExpr rhs)
         {
-            if (lhs.type != rhs.type || lhs.type != VariableType.Integer)
-            {
-                Compiler.Error($"Operator '<' cannot be applied to operands of type '{lhs.type}' and '{rhs.type}'");
-            }
-            Type = VariableType.Boolean;
-
             Lhs = lhs;
             Rhs = rhs;
         }
     }
     public struct NodeBinExprGreaterThan : INodeExprBin
     {
-        public VariableType Type { get; set; }
         public NodeExpr Lhs { get; set; }
         public NodeExpr Rhs { get; set; }
         public NodeBinExprGreaterThan(NodeExpr lhs, NodeExpr rhs)
         {
-            if (lhs.type != rhs.type || lhs.type != VariableType.Integer)
-            {
-                Compiler.Error($"Operator '>' cannot be applied to operands of type '{lhs.type}' and '{rhs.type}'");
-            }
-            Type = VariableType.Boolean;
-
             Lhs = lhs;
             Rhs = rhs;
         }
     }
     public struct NodeBinExprLessThanOrEqualTo : INodeExprBin
     {
-        public VariableType Type { get; set; }
         public NodeExpr Lhs { get; set; }
         public NodeExpr Rhs { get; set; }
         public NodeBinExprLessThanOrEqualTo(NodeExpr lhs, NodeExpr rhs)
         {
-            if (lhs.type != rhs.type || lhs.type != VariableType.Integer)
-            {
-                Compiler.Error($"Operator '<=' cannot be applied to operands of type '{lhs.type}' and '{rhs.type}'");
-            }
-            Type = VariableType.Boolean;
-
             Lhs = lhs;
             Rhs = rhs;
         }
     }
     public struct NodeBinExprGreaterThanOrEqualTo : INodeExprBin
     {
-        public VariableType Type { get; set; }
         public NodeExpr Lhs { get; set; }
         public NodeExpr Rhs { get; set; }
         public NodeBinExprGreaterThanOrEqualTo(NodeExpr lhs, NodeExpr rhs)
         {
-            if (lhs.type != rhs.type || lhs.type != VariableType.Integer)
-            {
-                Compiler.Error($"Operator '>=' cannot be applied to operands of type '{lhs.type}' and '{rhs.type}'");
-            }
-            Type = VariableType.Boolean;
-
             Lhs = lhs;
             Rhs = rhs;
         }
     }
     public struct NodeBinExprOr : INodeExprBin
     {
-        public VariableType Type { get; set; }
         public NodeExpr Lhs { get; set; }
         public NodeExpr Rhs { get; set; }
         public NodeBinExprOr(NodeExpr lhs, NodeExpr rhs)
         {
-            if (lhs.type != rhs.type || lhs.type != VariableType.Boolean)
-            {
-                Compiler.Error($"Operator '||' cannot be applied to operands of type '{lhs.type}' and '{rhs.type}'");
-            }
-            Type = VariableType.Boolean;
-
             Lhs = lhs;
             Rhs = rhs;
         }
     }
     public struct NodeBinExprAnd : INodeExprBin
     {
-        public VariableType Type { get; set; }
         public NodeExpr Lhs { get; set; }
         public NodeExpr Rhs { get; set; }
         public NodeBinExprAnd(NodeExpr lhs, NodeExpr rhs)
         {
-            if (lhs.type != rhs.type || lhs.type != VariableType.Boolean)
-            {
-                Compiler.Error($"Operator '&&' cannot be applied to operands of type '{lhs.type}' and '{rhs.type}'");
-            }
-            Type = VariableType.Boolean;
-
             Lhs = lhs;
             Rhs = rhs;
         }
     }
     public struct NodeBinExprXor : INodeExprBin
     {
-        public VariableType Type { get; set; }
         public NodeExpr Lhs { get; set; }
         public NodeExpr Rhs { get; set; }
         public NodeBinExprXor(NodeExpr lhs, NodeExpr rhs)
         {
-            if (lhs.type != rhs.type)
-            {
-                Compiler.Error($"Operator '^' cannot be applied to operands of type '{lhs.type}' and '{rhs.type}'");
-            }
-            Type = VariableType.Boolean;
-
             Lhs = lhs;
             Rhs = rhs;
         }
@@ -301,11 +195,50 @@ namespace Compiler
     public interface INodeExpr { }
     public struct NodeExpr
     {
-        public VariableType type;
         public INodeExpr var;
     }
     // --------------------------------------------------------------------- //
-    public struct NodeScope : INodeStmt
+
+
+    // --------------------------------------------------------------------- //
+    public interface INodeStmt { }
+    public interface INodeStmtProg { }
+    public interface INodeStmtStruct { }
+    public interface INodeStmtFunction { }
+    public struct NodeStmtVariableDeclaration : INodeStmt, INodeStmtStruct
+    {
+        public string name;
+        public string type;
+        public NodeStmtVariableDeclaration(string name, string type)
+        {
+            this.name = name;
+            this.type = type;
+        }
+    }
+
+    public struct NodeStmtVariableDefinition : INodeStmt, INodeStmtProg, INodeStmtFunction
+    {
+        public string name;
+        public string type;
+        public NodeExpr expr;
+        public NodeStmtVariableDefinition(string name, string type, NodeExpr expr)
+        {
+            this.name = name;
+            this.type = type;
+            this.expr = expr;
+        }
+    }
+    public struct NodeStmtVariableAssignment : INodeStmt, INodeStmtProg, INodeStmtFunction
+    {
+        public string name;
+        public NodeExpr expr;
+        public NodeStmtVariableAssignment(string name, NodeExpr expr)
+        {
+            this.name = name;
+            this.expr = expr;
+        }
+    }
+    public struct NodeScope : INodeStmt, INodeStmtProg, INodeStmtFunction
     {
         public List<NodeStmt> stmts;
         public NodeScope(List<NodeStmt> stmts)
@@ -313,39 +246,46 @@ namespace Compiler
             this.stmts = stmts;
         }
     }
-
-    // --------------------------------------------------------------------- //
-    public interface INodeStmt { }
-    public struct NodeStmtAssignment : INodeStmt
+    public struct NodeStmtFunctionDefinition : INodeStmt, INodeStmtProg
     {
-        public Token ident;
-        public VariableType type;
-        public NodeExpr expr;
-        public NodeStmtAssignment(Token ident, NodeExpr expr)
+        public string name;
+        public List<NodeStmtVariableDeclaration> parameters;
+        public NodeScope scope;
+        public string returnType;
+        public NodeStmtFunctionDefinition(string name, List<NodeStmtVariableDeclaration> parameters, NodeScope scope, string returnType)
         {
-            this.ident = ident;
-            type = expr.type;
+            this.name = name;
+            this.parameters = parameters;
+            this.scope = scope;
+            this.returnType = returnType;
+        }
+    }
+    public struct NodeStmtFunctionCall : INodeStmt, INodeStmtProg, INodeStmtFunction
+    {
+        public string name;
+        public List<NodeExpr> parameters;
+        public NodeStmtFunctionCall(string name, List<NodeExpr> parameters)
+        {
+            this.name = name;
+            this.parameters = parameters;
+        }
+    }
+    public struct NodeStmtReturn : INodeStmt, INodeStmtFunction
+    {
+        public NodeExpr expr;
+        public NodeStmtReturn(NodeExpr expr)
+        {
             this.expr = expr;
         }
     }
-    public struct NodeStmtDeclaration : INodeStmt
+    public struct NodeStmtStructDefinition : INodeStmt, INodeStmtProg
     {
-        public Token ident;
-        public VariableType type;
-        public NodeExpr expr;
-        public NodeStmtDeclaration(Token ident, NodeExpr expr)
+        public string name;
+        public NodeScope scope;
+        public NodeStmtStructDefinition(string name, NodeScope scope)
         {
-            this.ident = ident;
-            type = expr.type;
-            this.expr = expr;
-        }
-    }
-    public struct NodeStmtExit : INodeStmt
-    {
-        public NodeExpr expr;
-        public NodeStmtExit(NodeExpr expr)
-        {
-            this.expr = expr;
+            this.name = name;
+            this.scope = scope;
         }
     }
     public struct NodeStmtIf : INodeStmt
@@ -370,48 +310,16 @@ namespace Compiler
     }
     public struct NodeStmtFor : INodeStmt
     {
-        public NodeStmtDeclaration decl;
+        public NodeStmtVariableDefinition definition;
         public NodeExpr expr;
-        public NodeStmtAssignment assign;
+        public NodeStmtVariableAssignment assign;
         public NodeScope scope;
-        public NodeStmtFor(NodeStmtDeclaration decl, NodeExpr expr, NodeStmtAssignment assign, NodeScope scope)
+        public NodeStmtFor(NodeStmtVariableDefinition definition, NodeExpr expr, NodeStmtVariableAssignment assign, NodeScope scope)
         {
-            this.decl = decl;
+            this.definition = definition;
             this.expr = expr;
             this.assign = assign;
             this.scope = scope;
-        }
-    }
-    public struct NodeStmtFunctionDeclaration : INodeStmt
-    {
-        public string name;
-        public List<VariableToken> parameters;
-        public NodeScope scope;
-        public NodeStmtFunctionDeclaration(string name, List<VariableToken> parameters, NodeScope scope)
-        {
-            this.name = name;
-            this.parameters = parameters;
-            this.scope = scope;
-        }
-    }
-    public struct NodeStmtFunctionCall : INodeStmt, INodeTerm
-    {
-        public string name;
-        public VariableType Type { get; set; }
-        public List<NodeExpr> parameters;
-        public NodeStmtFunctionCall(string name, VariableType type, List<NodeExpr> parameters)
-        {
-            this.name = name;
-            Type = type;
-            this.parameters = parameters;
-        }
-    }
-    public struct NodeStmtReturn : INodeStmt
-    {
-        public NodeExpr expr;
-        public NodeStmtReturn(NodeExpr expr)
-        {
-            this.expr = expr;
         }
     }
     public struct NodeStmt

@@ -1,3 +1,17 @@
+COMPLETE REWORK:
+
+[USE INTERFACES FOR DIFFERENT SCOPES, EXAMPLE: RETURN STATEMENT ONLY IN FUNCTIONS]
+
+Generating:
+
+Variable declaration
+Variable definition
+Variable assignment
+Struct definition
+Function definition
+Function call
+
+
 functions as terms
 
 function return value type checking
